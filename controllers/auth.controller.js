@@ -1,5 +1,6 @@
 import { User } from "../models/User.js";
 import jwt from "jsonwebtoken";
+import { generateRefreshToken, generateToken, tokenVerificationErrors } from "../utils/tokenManager.js";
 
 export const register = async (req, res) => {
     const { email, password } = req.body;
@@ -31,10 +32,39 @@ export const login = async (req, res) => {
         const responsePass = await user.comparePassword(password);
         if(!responsePass) return res.status(403).json({error: 'Contraseña incorrecta'});
 
-        const token = jwt.sign({ uid: user.id }, process.env.JWT_SECRET);
+        const { token, expiresIn } = generateToken(user.id);
+        generateRefreshToken(user.id, res);
 
-        res.json({msg: 'Login recibido', token});
+        return res.json({msg: 'Login recibido', token: { token, expiresIn }});
+    } catch (error) {
+        return res.status(500).json({ error: 'Se perdio la conexión con la base de datos.' });
+    }
+};
+
+export const infoUser = async (req, res) => {
+    try {
+        const user = await User.findById(req.uid).lean();
+        return res.json({
+            email: user.email,
+            uid: user._id
+        });
     } catch (error) {
         return res.status(500).json({ error: 'Se perdio la conexión con la base de datos.' });
     }
 }
+
+export const refreshToken = async (req, res) => {
+    try {
+        console.log('refreshToken');
+        const { token, expiresIn } = generateToken(req.uid);
+        return res.json({ token, expiresIn });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Se perdio la conexión con la base de datos.' });
+    }
+};
+
+export const logout = (req, res) => {
+    res.clearCookie('refreshToken');
+    res.json({ msg: 'Sesión cerrada' });
+};
