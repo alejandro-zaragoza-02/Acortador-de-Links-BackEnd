@@ -1,5 +1,4 @@
 import { User } from "../models/User.js";
-import jwt from "jsonwebtoken";
 import { generateRefreshToken, generateToken, tokenVerificationErrors } from "../utils/tokenManager.js";
 
 export const register = async (req, res) => {
@@ -10,7 +9,8 @@ export const register = async (req, res) => {
         await user.save();
         return res.status(201).json({
             msg: 'Usuario guardado.',
-            user: user
+            user: user,
+            token: generateToken(user.id)
         });
 
     } catch (error) {
