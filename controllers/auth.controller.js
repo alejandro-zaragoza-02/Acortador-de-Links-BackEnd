@@ -55,7 +55,6 @@ export const infoUser = async (req, res) => {
 
 export const refreshToken = async (req, res) => {
     try {
-        console.log('refreshToken');
         const { token, expiresIn } = generateToken(req.uid);
         return res.json({ token, expiresIn });
     } catch (error) {
